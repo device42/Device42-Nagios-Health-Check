@@ -6,7 +6,7 @@ use warnings FATAL => 'all';
 use strict;
 use Data::Dumper;
 use JSON;
-use LWP::Simple;
+use LWP::UserAgent;
 use Nagios::Plugin;
 
 use vars qw($VERSION $PROGNAME  $verbose $timeout $result);
@@ -61,6 +61,11 @@ $plugin->add_arg(
  help => '-c, --critical=INTEGER:INTEGER',
 );
 
+$plugin->add_arg(
+ spec => 'ssl',
+ help => '-S, --ssl',
+);
+
 
 
 # Parse arguments and process standard ones (e.g. usage, help, version)
@@ -69,7 +74,9 @@ $plugin->getopts;
 local $SIG{ALRM} = sub { $plugin->nagios_exit(CRITICAL, "script execution time out") };
 alarm $plugin->opts->timeout;
 
-my $url = "http://" . $plugin->opts->host . ":" . $plugin->opts->port . "/healthstats/";
+my $url_protocol = $plugin->opts->ssl ? "https" : "http";
+
+my $url =   "$url_protocol://" . $plugin->opts->host . ":" . $plugin->opts->port . "/healthstats/";
 
 my $memory_param = "memory_in_MB";
 my %variables = (
@@ -92,14 +99,11 @@ $plugin->nagios_exit(UNKNOWN, "item " . $plugin->opts->item . " is not defined")
 # -- read JSON message from URL
 my $jsonResponse = loadFromURL($url);
 
-
-
 my $data = "";
 
 eval {
     # -- decode JSON to Perl structure
     $data = decode_json($jsonResponse);
-
     $plugin->nagios_exit(UNKNOWN, "no data received from server") if $data eq "";
 }; if ($@) {
     $plugin->nagios_exit(UNKNOWN, "can not parse JSON received from server");
@@ -139,9 +143,28 @@ $plugin->nagios_exit(OK, $plugin->opts->item . " = " . $data_val);
 # -- load data from URL
 sub loadFromURL {
     my $url = shift;
+
+    my $data;
     printLog("load $url");
-    my $data = get $url;
-    $plugin->nagios_exit(UNKNOWN, "Couldn't get $url") unless defined $data;
+
+     my $ua = LWP::UserAgent->new(ssl_opts => { verify_hostname => 0 });
+
+     my $response = $ua->get($url);
+
+    if ($response->is_success) {
+        $data =  $response->decoded_content;
+    } else {
+        my $err = "Couldn't get $url ," . $response->status_line;
+        printLog($err);
+        $plugin->nagios_exit(UNKNOWN, $err);
+    }
+
+    unless (defined ($data)) {
+        my $err = "Couldn't get $url";
+        printLog($err);
+        $plugin->nagios_exit(UNKNOWN, $err) ;
+    }
+
     return $data;
 }
 
