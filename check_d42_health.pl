@@ -82,7 +82,7 @@ $plugin->getopts;
 
 # -- cache variables
 my $cache_enabled           = $plugin->opts->cache ? 1 : 0;
-my $cache_dir_path          = "/tmp/"; # -- TODO: change in prod
+my $cache_dir_path          = "c:\\Temp\\"; # -- TODO: change in prod
 my $cache_file_name         = $plugin->opts->host . ".cache";
 my $cache_file_path         = $cache_dir_path . $cache_file_name;
 my $cache_expired_duration  = $plugin->opts->cache ? $plugin->opts->cache : 60 ; # -- cache expired after N seconds
@@ -148,6 +148,8 @@ if (defined($variables{$plugin->opts->item})) {
 } else {
     $data_val =  $data->{$plugin->opts->item};
 }
+
+$plugin->nagios_exit(UNKNOWN, "Item " . $plugin->opts->item . " is empty or not defined") unless $data_val;
 
 # -- prepare default output message for all checks
 my $output_text = $plugin->opts->item . " = " . $data_val;
