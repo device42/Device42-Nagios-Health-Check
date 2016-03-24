@@ -22,7 +22,7 @@ cfg_dir=/etc/nagios/servers
 
 ###  How to run ?###
 
-perl <check_d42_health path> -H <hostname> -P <port number> -I <metric name> -c <critical threshold> -w <warn threshold>
+perl \<check_d42_health path\> -H \<hostname\> -P \<port number\> -I \<metric name\> -c \<critical threshold\> -w \<warn threshold\> --ssl --cache=\<cache expired seconds\>
 
 `perl check_d42_health -H svnow01.device42.com -P 4242 -I cpu_used_percent -w 10 -c 20`
 
@@ -30,7 +30,15 @@ for SSL hosts
 
 `perl check_d42_health -H  158.69.157.1 -P 4343 --ssl -I cpu_used_percent -w 10 -c 20`
 
+List of available script parameters
 
+* -H        - Hostname
+* -P        - Port number
+* -I        - Metric name
+* -c        - Critical threshold
+* -w        - Warning threshold
+* -S        - Enable SSL (use HTTPS protocol)
+* -C        - Enable cache and set cache expire time duration in seconds. Default 60
 
 List of available metrics
 
