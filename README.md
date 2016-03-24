@@ -4,7 +4,7 @@
 
 Install perl libs
 
-`yum install perl-JSON.noarch`
+`yum install perl-JSON.noarch perl-Nagios-Plugin.noarch`
 
 ### Messages/Events ###
 * UNKNOWN Item is not defined - no item found in server respose
