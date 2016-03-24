@@ -8,12 +8,14 @@ use Data::Dumper;
 use JSON;
 use LWP::UserAgent;
 use Nagios::Plugin;
-
+use Fcntl qw(:flock SEEK_END );
 use vars qw($VERSION $PROGNAME  $verbose $timeout $result);
 $VERSION = '0.1';
 
 use File::Basename;
 $PROGNAME = basename($0);
+
+
 
 my $plugin = Nagios::Plugin->new(
     usage => "Usage: %s [ -v|--verbose ] [-t|--timeout <timeout>]
@@ -71,12 +73,22 @@ $plugin->add_arg(
 # Parse arguments and process standard ones (e.g. usage, help, version)
 $plugin->getopts;
 
+# -- cache variables
+my $cache_enabled           = 1;
+my $cache_dir_path          = "/tmp/"; # -- TODO: change in prod
+my $cache_file_name         = $plugin->opts->host . ".cache";
+my $cache_file_path         = $cache_dir_path . $cache_file_name;
+my $cache_expired_duration  = 60; # -- cache expired after N seconds
+
+
+# -- measure global script execution time out
 local $SIG{ALRM} = sub { $plugin->nagios_exit(CRITICAL, "script execution time out") };
 alarm $plugin->opts->timeout;
 
 my $url_protocol = $plugin->opts->ssl ? "https" : "http";
 
 my $url =   "$url_protocol://" . $plugin->opts->host . ":" . $plugin->opts->port . "/healthstats/";
+
 
 my $memory_param = "memory_in_MB";
 my %variables = (
@@ -96,8 +108,12 @@ my %variables = (
 # -- check items exist
 $plugin->nagios_exit(UNKNOWN, "item " . $plugin->opts->item . " is not defined") unless exists($variables{$plugin->opts->item});
 
+
+
+
 # -- read JSON message from URL
-my $jsonResponse = loadFromURL($url);
+#my $jsonResponse = loadFromURL($url);
+my $jsonResponse = readFromCache();
 
 my $data = "";
 
@@ -140,6 +156,41 @@ if ($plugin->opts->warning || $plugin->opts->critical) {
 $plugin->nagios_exit(OK, $plugin->opts->item . " = " . $data_val);
 
 
+# -- read from cache
+sub readFromCache {
+
+    my $data;
+
+    # -- if cache is expired or not exists
+    if (isCacheExpired() || ! -e $cache_file_path) {
+        printLog("cache is expired or does not exists");
+        $data = loadFromURL($url);
+        storeInCache($data);
+    } else {
+        printLog(" read data from cache");
+        open(my $fh, '<:encoding(UTF-8)', $cache_file_path) or die "Could not open file '$cache_file_path' $!";
+        $data =  <$fh>;
+        close $fh;
+    }
+
+    return $data;
+}
+
+# -- check if cache is expired
+sub isCacheExpired {
+    return (time - (stat ($cache_file_path))[9]) > $cache_expired_duration;
+}
+# -- put to cache
+sub storeInCache {
+    my $context = shift;
+
+    open(my $fh, '>:encoding(UTF-8)', $cache_file_path) or die "Could not open file '$cache_file_path' $!";
+#    lock($fh);
+    print $fh $context;
+#    unlock($fh);
+    close $fh;
+}
+
 # -- load data from URL
 sub loadFromURL {
     my $url = shift;
@@ -172,4 +223,14 @@ sub loadFromURL {
 sub printLog {
     my $context = shift;
     print "$context\n" if $plugin->opts->verbose;
+}
+
+sub lock {
+    my ($fh) = @_;
+    flock($fh, LOCK_EX) or die "Cannot lock $cache_file_path - $!\n";
+    seek($fh, 0, SEEK_END) or die "Cannot seek - $!\n";
+}
+sub unlock {
+    my ($fh) = @_;
+    flock($fh, LOCK_UN) or die "Cannot unlock $cache_file_path - $!\n";
 }
