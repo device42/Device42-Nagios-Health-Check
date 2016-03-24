@@ -30,7 +30,7 @@ for SSL hosts
 
 `perl check_d42_health -H  158.69.157.1 -P 4343 --ssl -I cpu_used_percent -w 10 -c 20`
 
-List of available script parameters
+### List of available script parameters ###
 
 * -H        - Hostname
 * -P        - Port number
@@ -40,7 +40,7 @@ List of available script parameters
 * -S        - Enable SSL (use HTTPS protocol)
 * -C        - Enable cache and set cache expire time duration in seconds. Default 60
 
-List of available metrics
+### List of available metrics ###
 
 * cpu_used_percent
 * dbsize
