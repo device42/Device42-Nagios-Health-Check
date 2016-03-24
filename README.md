@@ -8,6 +8,8 @@ Install perl libs
 
 copy file d42.cfg to Nagios configuration path (e.g: /etc/nagios/servers/)
 
+file d42.cfg include common d 42 health command, services and host defined for Nagios configuration
+
 copy file check_d42_health to Nagios library directory (e.g: /usr/lib64/nagios/plugins/)
 
 set permission with command `chmod +x check_d42_health`
