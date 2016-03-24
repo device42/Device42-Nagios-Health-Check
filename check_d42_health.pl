@@ -181,7 +181,7 @@ sub readFromCache {
         $data = loadFromURL($url);
         storeInCache($data);
     } else {
-        printLog(" read data from cache");
+        printLog("read data from cache");
         open(my $fh, '<:encoding(UTF-8)', $cache_file_path) or die "Could not open file '$cache_file_path' $!";
         $data =  <$fh>;
         close $fh;
@@ -213,7 +213,8 @@ sub loadFromURL {
     my $data;
     printLog("load $url");
 
-     my $ua = LWP::UserAgent->new(ssl_opts => { verify_hostname => 0 });
+     my $ua = LWP::UserAgent->new(ssl_opts => { verify_hostname => 0, SSL_verify_mode => 0x00 });
+
 
      my $response = $ua->get($url);
 
