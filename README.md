@@ -44,3 +44,6 @@ List of available metrics
 * UNKNOWN No data received from server
 * CRITICAL script execution time out
 * UNKNOWN - no data for item <item name>
+
+Example of D42 Health Checks imported to Nagios
+![d42_health_checks.PNG](https://bitbucket.org/repo/j8r8ga/images/1063479053-d42_health_checks.PNG)
