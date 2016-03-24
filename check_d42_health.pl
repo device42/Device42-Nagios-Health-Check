@@ -9,6 +9,7 @@ use JSON;
 use LWP::UserAgent;
 use Nagios::Plugin;
 use Fcntl qw(:flock SEEK_END );
+
 use vars qw($VERSION $PROGNAME  $verbose $timeout $result);
 $VERSION = '0.1';
 
@@ -63,22 +64,28 @@ $plugin->add_arg(
  help => '-c, --critical=INTEGER:INTEGER',
 );
 
+# -- add ssl option
 $plugin->add_arg(
  spec => 'ssl',
- help => '-S, --ssl',
+ help => '-S, --ssl Use HTTP protocol to fetch data',
 );
 
-
+# -- cache param
+$plugin->add_arg(
+ spec => 'cache|C=s',
+ default => 60,
+ help => '-C, --cache=INTEGER Enable Cache time expired after N seconds. Default 60 secs'
+);
 
 # Parse arguments and process standard ones (e.g. usage, help, version)
 $plugin->getopts;
 
 # -- cache variables
-my $cache_enabled           = 1;
-my $cache_dir_path          = "/tmp/"; # -- TODO: change in prod
+my $cache_enabled           = $plugin->opts->cache ? 1 : 0;
+my $cache_dir_path          = "c:\\temp\\"; # -- TODO: change in prod
 my $cache_file_name         = $plugin->opts->host . ".cache";
 my $cache_file_path         = $cache_dir_path . $cache_file_name;
-my $cache_expired_duration  = 60; # -- cache expired after N seconds
+my $cache_expired_duration  = $plugin->opts->cache ? $plugin->opts->cache : 60 ; # -- cache expired after N seconds
 
 
 # -- measure global script execution time out
@@ -109,11 +116,17 @@ my %variables = (
 $plugin->nagios_exit(UNKNOWN, "item " . $plugin->opts->item . " is not defined") unless exists($variables{$plugin->opts->item});
 
 
-
-
 # -- read JSON message from URL
-#my $jsonResponse = loadFromURL($url);
-my $jsonResponse = readFromCache();
+# -- check if data exist in cache
+my $jsonResponse;
+
+ if ($cache_enabled) {
+    printLog("cache is enabled");
+    $jsonResponse = readFromCache();
+ } else {
+    printLog("cache is disabled");
+    $jsonResponse = loadFromURL($url);
+ }
 
 my $data = "";
 
@@ -178,7 +191,7 @@ sub readFromCache {
 
 # -- check if cache is expired
 sub isCacheExpired {
-    return (time - (stat ($cache_file_path))[9]) > $cache_expired_duration;
+    return (-e $cache_file_path ) && (time - (stat ($cache_file_path))[9]) > $cache_expired_duration;
 }
 # -- put to cache
 sub storeInCache {
