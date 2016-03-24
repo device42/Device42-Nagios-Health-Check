@@ -10,7 +10,7 @@ Install perl libs
 * UNKNOWN Item is not defined - no item found in server respose
 * UNKNOWN Can not parse JSON received from server
 * UNKNOWN No data received from server
-* 
+* CRITICAL script execution time out
 
 # How to run
 perl nagios-d42-health-check.pl -H svnow01.device42.com -P 4242 -I cpu_used_percent -w10:
