@@ -10,7 +10,7 @@ use LWP::Simple;
 use Nagios::Plugin;
 
 use vars qw($VERSION $PROGNAME  $verbose $timeout $result);
-$VERSION = '1.0';
+$VERSION = '0.1';
 
 use File::Basename;
 $PROGNAME = basename($0);
@@ -115,16 +115,25 @@ if (defined($variables{$plugin->opts->item})) {
     $data_val =  $data->{$plugin->opts->item};
 }
 
-# Threshold methods
-my $code = $plugin->check_threshold(
-    check => $data_val,
-    warning => $plugin->opts->warning,
-    critical => $plugin->opts->critical,
-);
+# -- prepare default output message for all checks
+my $output_text = $plugin->opts->item . " = " . $data_val;
 
-# -- return thresholds check result
-$plugin->nagios_exit( $code, "Threshold check failed" ) if $code != OK;
+# -- set thresholds
+$plugin->set_thresholds(warning => $plugin->opts->warning, critical => $plugin->opts->critical);
 
+
+# -- compare thresholds if defined
+if ($plugin->opts->warning || $plugin->opts->critical) {
+
+	$plugin->nagios_exit(
+
+		return_code => $plugin->check_threshold($data_val),
+		message     => $output_text
+	  );
+}
+
+# -- exit with OK status if all is good
+$plugin->nagios_exit(OK, $plugin->opts->item . " = " . $data_val);
 
 
 # -- load data from URL
