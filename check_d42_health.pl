@@ -177,25 +177,32 @@ if ($plugin->opts->item eq 'memfree') {
 }
 
 # -- process backup status item
-
 if ($plugin->opts->item eq 'backup_status') {
 
-#    my @backups = $data_val;
-    my @backups = ({"status" => "good\n @ 2016-03-24 20:25:08", "id" => 1, "job_name"=> "testbackup"});
-#    my @backups = ({"status" => "File send failed :[Errno 2] No such file\n\n @ 2016-03-24 20:20:03", "id"=> 1, "job_name"=> "testbackup"});
+    my @backups = $data_val;
+#     my @backups = ({ "status" => "File send failed :[Errno 113] No route to host\n\n @ 2016-03-25 12:19:06","id"=> 1, "job_name"=> "testbackup" },
+#       { "status"=> "good\n @ 2016-03-25 12:36:18", "id"=> 2, "job_name"=> "backup2" } );
 
     eval {
-        die $plugin->opts->item . " has more than 1 element, skip processing" if scalar @backups > 1;
-        die $plugin->opts->item . " is empty, skip processing" if scalar @backups > 1;
-        my $backup = $backups[0];
+        die $plugin->opts->item . " is empty, skip processing" if scalar @backups  == 0;
 
-        # -- check if job status is good
-        if ($backup->{'status'} =~ m/good\n @/ig) {
-            $plugin->nagios_exit(OK, "backup job \"" . $backup->{job_name}  . "\" completed  successfully");
-        } else {
-        # -- notify with critical event
-            $plugin->nagios_exit(CRITICAL, "backup job \"" . $backup->{job_name}  . "\" ran with errors");
+        # -- initialize empty array for failed jobs
+        my @failed_jobs = ();
+        # -- iterate through each backup and check status
+        foreach my $backup (@backups) {
+
+            # -- check if job status is good, push failed jobs to another list
+            push @failed_jobs, $backup->{job_name} if ($backup->{'status'} !~ m/good\n @/ig);
         }
+
+        # -- check if array is not empty
+        if (scalar @failed_jobs) {
+            # -- notify with critical event
+            $plugin->nagios_exit(CRITICAL, "backup jobs \"" . join(',',@failed_jobs)  . "\" ran with errors");
+        } else {
+             $plugin->nagios_exit(OK, "all backup jobs successfully finished");
+        }
+
     }; if ($@) {
         # -- catch any error occurred
         $plugin->nagios_exit(UNKNOWN, "Item " . $plugin->opts->item .  " - " . $@);
