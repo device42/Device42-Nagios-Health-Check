@@ -81,7 +81,7 @@ $plugin->add_arg(
 $plugin->getopts;
 
 # -- cache variables
-my $cache_enabled           = $plugin->opts->cache ? 1 : 0;
+my $cache_enabled           = $plugin->opts->cache eq '' ? 1 : 0;
 my $cache_dir_path          = "c:\\Temp\\"; # -- TODO: change in prod
 my $cache_file_name         = $plugin->opts->host . ".cache";
 my $cache_file_path         = $cache_dir_path . $cache_file_name;
@@ -102,8 +102,8 @@ my $url =   "$url_protocol://" . $plugin->opts->host . ":" . $plugin->opts->port
 my $memory_param = "memory_in_MB";
 my %variables = (
     cpu_used_percent    => undef,
-    dbsize              => '',
-    backup_status       => '',
+    dbsize              => undef,
+    backup_status       => undef,
     disk_used_percent   => undef,
     cached              => $memory_param,
     buffers             => $memory_param,
@@ -128,6 +128,7 @@ my $jsonResponse;
     $jsonResponse = loadFromURL($url);
  }
 
+
 my $data = "";
 
 eval {
@@ -137,6 +138,8 @@ eval {
 }; if ($@) {
     $plugin->nagios_exit(UNKNOWN, "can not parse JSON received from server");
 }
+
+
 
 my $data_val = undef;
 
@@ -148,6 +151,9 @@ if (defined($variables{$plugin->opts->item})) {
 } else {
     $data_val =  $data->{$plugin->opts->item};
 }
+
+# -- remove MB or Gb string from the dbsize value.
+$data_val =~s/ MB|GB//ig if ($plugin->opts->item eq 'dbsize');
 
 $plugin->nagios_exit(UNKNOWN, "Item " . $plugin->opts->item . " is empty or not defined") unless $data_val;
 
