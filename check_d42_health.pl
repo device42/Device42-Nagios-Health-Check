@@ -18,13 +18,14 @@ use File::Basename;
 $PROGNAME = basename($0);
 
 
-
 my $plugin = Nagios::Plugin->new(
     usage => "Usage: %s [ -v|--verbose ] [-t|--timeout <timeout>]
     [ -H|--host=<hostname> ]
     [ -P|--port=<port number, default is 4242> ]
     [ -I|--item=<item to check (e.g: dbsize, backup_status, disk_used_percent, etc. )> ]
     [ -c|--critical=<threshold> ] [ -w|--warning=<threshold> ]
+    [ -C|--cache=<seconds to expire> ]
+    [ -S|--ssl Use HTTP protocol ]
     [ -t|--timeout=<Time out> ]",
 
 
@@ -91,8 +92,6 @@ my $cache_file_path         = getPath($cache_dir_path . $cache_file_name);
 my $cache_expired_duration  = $plugin->opts->cache ? $plugin->opts->cache : 60 ; # -- cache expired after N seconds
 
 
-print Dumper $cache_file_path;
-
 # -- measure global script execution time out
 local $SIG{ALRM} = sub { $plugin->nagios_exit(CRITICAL, "script execution time out") };
 alarm $plugin->opts->timeout;
@@ -157,9 +156,27 @@ if (defined($variables{$plugin->opts->item})) {
     $data_val =  $data->{$plugin->opts->item};
 }
 
+
+# post processor section (do some dta manipulations..)
+
+
 # -- remove MB or Gb string from the dbsize value.
 $data_val =~s/ MB|GB//ig if ($plugin->opts->item eq 'dbsize');
 
+# -- calculate percentage of memfree from memtotal
+if ($plugin->opts->item eq 'memfree') {
+    # -- memtotal = 100%
+    my $memTotal    = $data->{$variables{memtotal}}->{memtotal};
+
+    # -- get memfree value
+    my $memFree     = $data_val;
+    # -- calculate PCT of total memory and round it
+    my $memFreePct  = sprintf("%.3f", ($memFree /  ($memTotal / 100) ));
+
+    # -- assign back to data val parameter that should be compared with the thresholds
+    $data_val = $memFreePct;
+
+}
 $plugin->nagios_exit(UNKNOWN, "Item " . $plugin->opts->item . " is empty or not defined") unless $data_val;
 
 # -- prepare default output message for all checks
