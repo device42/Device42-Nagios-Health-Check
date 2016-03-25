@@ -157,29 +157,31 @@ if (defined($variables{$plugin->opts->item})) {
 }
 
 
-# post processor section (do some data manipulations..)
+# -- post processor section (do some data manipulations..)
 
 # -- remove MB or Gb string from the dbsize value.
 $data_val =~s/ MB|GB//ig if ($plugin->opts->item eq 'dbsize');
 
 # -- calculate percentage of memfree from memtotal
 if ($plugin->opts->item eq 'memfree') {
-    # -- memtotal = 100%
-    my $memTotal    = $data->{$variables{memtotal}}->{memtotal};
 
-    # -- get memfree value
-    my $memFree     = $data_val;
-    # -- calculate PCT of total memory and round it
-    my $memFreePct  = sprintf("%.3f", ($memFree /  ($memTotal / 100) ));
-
-    # -- assign back to data val parameter that should be compared with the thresholds
-    $data_val = $memFreePct;
+    # -- assign back to data_val parameter and then compare with the thresholds
+    $data_val = getPercentage('memtotal',$data_val);
 }
+
+# --
+if ($plugin->opts->item eq 'swapfree') {
+    # -- assign back to data_val parameter and then compare with the thresholds
+    $data_val = getPercentage('swaptotal', $data_val);
+}
+
+
 
 # -- process backup status item
 if ($plugin->opts->item eq 'backup_status') {
 
-    my @backups = $data_val;
+    my @backups = @$data_val;
+
 #     my @backups = ({ "status" => "File send failed :[Errno 113] No route to host\n\n @ 2016-03-25 12:19:06","id"=> 1, "job_name"=> "testbackup" },
 #       { "status"=> "good\n @ 2016-03-25 12:36:18", "id"=> 2, "job_name"=> "backup2" } );
 
@@ -205,7 +207,7 @@ if ($plugin->opts->item eq 'backup_status') {
 
     }; if ($@) {
         # -- catch any error occurred
-        $plugin->nagios_exit(UNKNOWN, "Item " . $plugin->opts->item .  " - " . $@);
+        $plugin->nagios_exit(UNKNOWN, $@);
     }
 }
 
@@ -321,4 +323,14 @@ sub getPath {
 #		return $path;
 		return File::Spec->catfile($path);
 	}
+}
+
+# -- calculate percentage of total.
+# -- @total item name, free value
+sub getPercentage {
+    my ($total_item_name, $free) = @_;
+
+    my $total = $data->{$variables{$total_item_name}}->{$total_item_name};
+    # -- calculate PCT of total memory and round it
+    return sprintf("%.3f", ($free /  ($total / 100) ));
 }
