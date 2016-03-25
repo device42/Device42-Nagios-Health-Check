@@ -181,7 +181,6 @@ if ($plugin->opts->item eq 'swapfree') {
 if ($plugin->opts->item eq 'backup_status') {
 
     my @backups = @$data_val;
-
 #     my @backups = ({ "status" => "File send failed :[Errno 113] No route to host\n\n @ 2016-03-25 12:19:06","id"=> 1, "job_name"=> "testbackup" },
 #       { "status"=> "good\n @ 2016-03-25 12:36:18", "id"=> 2, "job_name"=> "backup2" } );
 
