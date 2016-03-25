@@ -157,8 +157,7 @@ if (defined($variables{$plugin->opts->item})) {
 }
 
 
-# post processor section (do some dta manipulations..)
-
+# post processor section (do some data manipulations..)
 
 # -- remove MB or Gb string from the dbsize value.
 $data_val =~s/ MB|GB//ig if ($plugin->opts->item eq 'dbsize');
@@ -175,8 +174,34 @@ if ($plugin->opts->item eq 'memfree') {
 
     # -- assign back to data val parameter that should be compared with the thresholds
     $data_val = $memFreePct;
-
 }
+
+# -- process backup status item
+
+if ($plugin->opts->item eq 'backup_status') {
+
+#    my @backups = $data_val;
+    my @backups = ({"status" => "good\n @ 2016-03-24 20:25:08", "id" => 1, "job_name"=> "testbackup"});
+#    my @backups = ({"status" => "File send failed :[Errno 2] No such file\n\n @ 2016-03-24 20:20:03", "id"=> 1, "job_name"=> "testbackup"});
+
+    eval {
+        die $plugin->opts->item . " has more than 1 element, skip processing" if scalar @backups > 1;
+        die $plugin->opts->item . " is empty, skip processing" if scalar @backups > 1;
+        my $backup = $backups[0];
+
+        # -- check if job status is good
+        if ($backup->{'status'} =~ m/good\n @/ig) {
+            $plugin->nagios_exit(OK, "backup job \"" . $backup->{job_name}  . "\" completed  successfully");
+        } else {
+        # -- notify with critical event
+            $plugin->nagios_exit(CRITICAL, "backup job \"" . $backup->{job_name}  . "\" ran with errors");
+        }
+    }; if ($@) {
+        # -- catch any error occurred
+        $plugin->nagios_exit(UNKNOWN, "Item " . $plugin->opts->item .  " - " . $@);
+    }
+}
+
 $plugin->nagios_exit(UNKNOWN, "Item " . $plugin->opts->item . " is empty or not defined") unless $data_val;
 
 # -- prepare default output message for all checks
