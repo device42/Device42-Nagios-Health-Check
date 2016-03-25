@@ -73,16 +73,18 @@ $plugin->add_arg(
 # -- cache param
 $plugin->add_arg(
  spec => 'cache|C=s',
- default => 60,
+# default => 60,
  help => '-C, --cache=INTEGER Enable Cache time expired after N seconds. Default 60 secs'
 );
 
 # Parse arguments and process standard ones (e.g. usage, help, version)
 $plugin->getopts;
 
+
 # -- cache variables
-my $cache_enabled           = $plugin->opts->cache eq '' ? 1 : 0;
-my $cache_dir_path          = "c:\\Temp\\"; # -- TODO: change in prod
+my $cache_enabled           = $plugin->opts->cache ? 1 : 0;
+my $cache_dir_path          = "/tmp/"; # -- TODO: change in prod
+#my $cache_dir_path          = "c:\\temp\\"; # -- TODO: change in prod
 my $cache_file_name         = $plugin->opts->host . ".cache";
 my $cache_file_path         = $cache_dir_path . $cache_file_name;
 my $cache_expired_duration  = $plugin->opts->cache ? $plugin->opts->cache : 60 ; # -- cache expired after N seconds
