@@ -12,6 +12,7 @@ use Fcntl qw(:flock SEEK_END );
 
 use vars qw($VERSION $PROGNAME  $verbose $timeout $result);
 $VERSION = '0.1';
+our $os = "$^O";
 
 use File::Basename;
 $PROGNAME = basename($0);
@@ -83,12 +84,14 @@ $plugin->getopts;
 
 # -- cache variables
 my $cache_enabled           = $plugin->opts->cache ? 1 : 0;
-my $cache_dir_path          = "/tmp/"; # -- TODO: change in prod
-#my $cache_dir_path          = "c:\\temp\\"; # -- TODO: change in prod
+my $cache_dir_path          = "/tmp/"; # -- TODO: change before posting to GIT
+#my $cache_dir_path          = "c:\\temp\\";
 my $cache_file_name         = $plugin->opts->host . ".cache";
-my $cache_file_path         = $cache_dir_path . $cache_file_name;
+my $cache_file_path         = getPath($cache_dir_path . $cache_file_name);
 my $cache_expired_duration  = $plugin->opts->cache ? $plugin->opts->cache : 60 ; # -- cache expired after N seconds
 
+
+print Dumper $cache_file_path;
 
 # -- measure global script execution time out
 local $SIG{ALRM} = sub { $plugin->nagios_exit(CRITICAL, "script execution time out") };
@@ -257,4 +260,16 @@ sub lock {
 sub unlock {
     my ($fh) = @_;
     flock($fh, LOCK_UN) or die "Cannot unlock $cache_file_path - $!\n";
+}
+
+# -- get path correct path depends on OS type
+sub getPath {
+    my ($path) = @_;
+
+    if ($os eq "MSWin32") {
+        return File::Spec::Win32->canonpath("c:/" .$path);
+    } else {
+#		return $path;
+		return File::Spec->catfile($path);
+	}
 }
