@@ -24,11 +24,11 @@ cfg_dir=/etc/nagios/servers
 
 perl \<check_d42_health path\> -H \<hostname\> -P \<port number\> -I \<metric name\> -c \<critical threshold\> -w \<warn threshold\> --ssl --cache=\<cache expired seconds\>
 
-`perl check_d42_health -H svnow01.device42.com -P 4242 -I cpu_used_percent -w 10 -c 20`
+`perl check_d42_health -H svnow01.device42.com -P 4242 -I cpu_used_percent -w 10 -c 20 --cache=60`
 
 for SSL hosts
 
-`perl check_d42_health -H  158.69.157.1 -P 4343 --ssl -I cpu_used_percent -w 10 -c 20`
+`perl check_d42_health -H  158.69.157.1 -P 4343 --ssl -I cpu_used_percent -w 10 -c 20 --cache=60`
 
 ### List of available script parameters ###
 
