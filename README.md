@@ -63,4 +63,4 @@ for SSL hosts
 * CRITICAL  - backup job <jobs list> ran with errors
 
 Example of D42 Health Checks imported to Nagios
-![d42_health_checks.PNG](https://bitbucket.org/repo/j8r8ga/images/1063479053-d42_health_checks.PNG)
+![d42_health_checks.PNG](http://docssite.s3.amazonaws.com/media/images/2016-03-26-Nagios-01.png)
