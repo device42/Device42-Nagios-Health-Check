@@ -172,7 +172,7 @@ if ($plugin->opts->item eq 'memfree') {
 # --
 if ($plugin->opts->item eq 'swapfree') {
     # -- assign back to data_val parameter and then compare with the thresholds
-    $data_val = getPercentage('swaptotal', $data_val);
+    $data_val = 100 - getPercentage('swaptotal', $data_val);
 }
 
 
@@ -210,13 +210,21 @@ if ($plugin->opts->item eq 'backup_status') {
     }
 }
 
-$plugin->nagios_exit(UNKNOWN, "Item " . $plugin->opts->item . " is empty or not defined") unless $data_val;
+$plugin->nagios_exit(UNKNOWN, "Item " . $plugin->opts->item . " is empty or not defined") unless defined($data_val);
 
 # -- prepare default output message for all checks
-my $output_text = $plugin->opts->item . " = " . $data_val;
+my $output_val = $data_val;
+if($plugin->opts->item eq 'swapfree') { 
+    $output_val = 100-$data_val;
+}
+my $output_text = $plugin->opts->item . " = " . $output_val;
 
 # -- set thresholds
-$plugin->set_thresholds(warning => $plugin->opts->warning, critical => $plugin->opts->critical);
+if($plugin->opts->item eq 'memfree') { 
+	$plugin->set_thresholds(warning => (100 - $plugin->opts->warning), critical => (100 - $plugin->opts->critical));
+} else {
+	$plugin->set_thresholds(warning => $plugin->opts->warning, critical => $plugin->opts->critical);
+}
 
 # -- compare thresholds
 if ($plugin->opts->warning || $plugin->opts->critical) {
