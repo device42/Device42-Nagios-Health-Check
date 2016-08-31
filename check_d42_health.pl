@@ -7,7 +7,7 @@ use strict;
 use Data::Dumper;
 use JSON;
 use LWP::UserAgent;
-use Nagios::Plugin;
+use Monitoring::Plugin;
 use Fcntl qw(:flock SEEK_END );
 
 use vars qw($VERSION $PROGNAME  $verbose $timeout $result);
@@ -18,7 +18,7 @@ use File::Basename;
 $PROGNAME = basename($0);
 
 
-my $plugin = Nagios::Plugin->new(
+my $plugin = Monitoring::Plugin->new(
     usage => "Usage: %s [ -v|--verbose ] [-t|--timeout <timeout>]
     [ -H|--host=<hostname> ]
     [ -P|--port=<port number, default is 4242> ]
