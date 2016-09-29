@@ -159,8 +159,13 @@ if (defined($variables{$plugin->opts->item})) {
 
 # -- post processor section (do some data manipulations..)
 
-# -- remove MB or Gb string from the dbsize value.
-$data_val =~s/ MB|GB//ig if ($plugin->opts->item eq 'dbsize');
+# -- normalize on MB for the dbsize value.
+if ($plugin->opts->item eq 'dbsize'){
+    $data_val =~ s|^\s*(\d+)\s*(B)?\s*$|sprintf("%0.3f", $1/(1024*1024))|ie;    # convert byte to MB
+    $data_val =~ s|^\s*(\d+)\s*KB\s*$|sprintf("%0.3f", $1/1024)|ie;             # convert KB to MB
+    $data_val =~ s|^\s*(\d+)\s*GB\s*$|$1*1024|ie;                               # convert GB to MB
+    $data_val =~ s/^\s*(\d+)\s*MB\s*$/$1/ig;
+}
 
 # -- calculate percentage of memfree from memtotal
 if ($plugin->opts->item eq 'memfree') {
