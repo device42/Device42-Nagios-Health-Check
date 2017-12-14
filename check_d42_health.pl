@@ -69,7 +69,7 @@ $plugin->add_arg(
 # -- add ssl option
 $plugin->add_arg(
  spec => 'ssl|S',
- help => '-S, --ssl Use HTTP protocol to fetch data',
+ help => '-S, --ssl Use HTTPS protocol to fetch data',
 );
 
 # -- cache param
