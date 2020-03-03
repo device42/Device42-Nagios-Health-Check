@@ -1,5 +1,4 @@
 #!/usr/bin/perl
-# -- Author:        Skribnik Evgeny, hemulll@gmail.com
 # -- Description:   d42 instance health check
 
 use warnings FATAL => 'all';
