@@ -16,7 +16,6 @@ our $os = "$^O";
 use File::Basename;
 $PROGNAME = basename($0);
 
-
 my $plugin = Monitoring::Plugin->new(
     usage => "Usage: %s [ -v|--verbose ] [-t|--timeout <timeout>]
     [ -H|--host=<hostname> ]
@@ -81,6 +80,7 @@ $plugin->add_arg(
 # Parse arguments and process standard ones (e.g. usage, help, version)
 $plugin->getopts;
 
+my $uom = '';
 
 # -- cache variables
 my $cache_enabled           = $plugin->opts->cache ? 1 : 0;
@@ -179,7 +179,15 @@ if ($plugin->opts->item eq 'swapfree') {
     $data_val = 100 - getPercentage('swaptotal', $data_val);
 }
 
-
+if ($plugin->opts->item =~ /swapfree|memfree|disk_used_percent|cpu_used_percent/) {
+    $uom = '%'
+}
+elsif ($plugin->opts->item =~ /swaptotal|memtotal|dbsize/) {
+    $uom = 'MB'
+}
+else {
+  $uom = ''
+}
 
 # -- process backup status item
 if ($plugin->opts->item eq 'backup_status') {
@@ -229,6 +237,12 @@ if($plugin->opts->item eq 'memfree') {
 } else {
 	$plugin->set_thresholds(warning => $plugin->opts->warning, critical => $plugin->opts->critical);
 }
+
+$plugin->add_perfdata(
+  label => $plugin->opts->item,
+  value => $data_val,
+  uom => $uom,
+) if ($uom ne '');
 
 # -- compare thresholds
 if ($plugin->opts->warning || $plugin->opts->critical) {
